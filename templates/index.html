@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title> Learning Buddy</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      height: 90vh;
+    }
+
+    .header {
+      background: #1a5276;
+      color: white;
+      padding: 16px 20px;
+      border-radius: 12px 12px 0 0;
+      text-align: center;
+    }
+
+    .header h1 { font-size: 1.2rem; }
+    .header p  { font-size: 0.85rem; opacity: 0.85; margin-top: 4px; }
+
+    .chat-window {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message {
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .message.user {
+      background: #1a5276;
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 2px;
+    }
+
+    .message.bot {
+      background: #eaf0fb;
+      color: #222;
+      align-self: flex-start;
+      border-bottom-left-radius: 2px;
+    }
+
+    .message.system-msg {
+      background: #fff3cd;
+      color: #856404;
+      align-self: center;
+      font-size: 0.85rem;
+      text-align: center;
+      border-radius: 8px;
+      padding: 8px 14px;
+      max-width: 90%;
+    }
+
+    .input-area {
+      padding: 14px 16px;
+      border-top: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .upload-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .upload-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #eaf0fb;
+      border: 1px solid #1a5276;
+      color: #1a5276;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: bold;
+    }
+
+    .upload-label:hover { background: #d0e4f7; }
+    #file-input { display: none; }
+    #file-name  { font-size: 0.82rem; color: #555; }
+
+    .send-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    #user-input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+      resize: none;
+      height: 44px;
+    }
+
+    #user-input:focus { border-color: #1a5276; }
+
+    button {
+      background: #1a5276;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: bold;
+    }
+
+    button:hover   { background: #154360; }
+    button:disabled{ background: #aaa; cursor: not-allowed; }
+
+    .typing {
+      font-style: italic;
+      color: #888;
+      font-size: 0.85rem;
+      padding-left: 4px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>🎓 Learning Buddy</h1>
+    <p><p>Your AI-powered study companion</p></p>
+  </div>
+
+  <div class="chat-window" id="chat-window">
+    <div class="message bot">
+      Hello! I am Learning Buddy, your AI-powered study companion. 
+      You can ask me academic questions or upload a document (PDF or Word) 
+      for review. How can I help you today?
+    </div>
+  </div>
+
+  <div class="input-area">
+
+    <div class="upload-row">
+      <label class="upload-label" for="file-input">
+        📎 Upload Document
+      </label>
+      <input type="file" id="file-input" accept=".pdf,.docx" />
+      <span id="file-name">No file selected</span>
+      <button id="upload-btn" onclick="uploadFile()">Upload</button>
+    </div>
+
+    <div class="send-row">
+      <textarea id="user-input" placeholder="Type your question here..." 
+        onkeydown="handleKey(event)"></textarea>
+      <button id="send-btn" onclick="sendMessage()">Send</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const chatWindow = document.getElementById('chat-window');
+
+  function addMessage(text, role) {
+    const div = document.createElement('div');
+    div.className = `message ${role}`;
+    if (role === 'bot') {
+        div.innerHTML = marked.parse(text);
+    } else {
+        div.textContent = text;
+    }
+    chatWindow.appendChild(div);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+  function addTyping() {
+    const div = document.createElement('div');
+    div.className = 'typing';
+    div.id = 'typing';
+    div.textContent = 'Assistant is typing...';
+    chatWindow.appendChild(div);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+  }
+
+  function removeTyping() {
+    const t = document.getElementById('typing');
+    if (t) t.remove();
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('user-input');
+    const message = input.value.trim();
+    if (!message) return;
+
+    addMessage(message, 'user');
+    input.value = '';
+
+    document.getElementById('send-btn').disabled = true;
+    addTyping();
+
+    try {
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+      });
+      const data = await res.json();
+      removeTyping();
+      addMessage(data.reply || data.error, 'bot');
+    } catch (err) {
+      removeTyping();
+      addMessage('Error: Could not reach the server. Please try again.', 'bot');
+    }
+
+    document.getElementById('send-btn').disabled = false;
+  }
+
+  // File name display
+  document.getElementById('file-input').addEventListener('change', function () {
+    const name = this.files[0] ? this.files[0].name : 'No file selected';
+    document.getElementById('file-name').textContent = name;
+  });
+
+  async function uploadFile() {
+    const fileInput = document.getElementById('file-input');
+    if (!fileInput.files[0]) {
+      alert('Please select a file first.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    document.getElementById('upload-btn').disabled = true;
+    addMessage(`Uploading "${fileInput.files[0].name}"...`, 'system-msg');
+
+    try {
+      const res = await fetch('/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      addMessage(data.message || data.error, 'system-msg');
+    } catch (err) {
+      addMessage('Error: Could not upload file. Please try again.', 'system-msg');
+    }
+
+    document.getElementById('upload-btn').disabled = false;
+    fileInput.value = '';
+    document.getElementById('file-name').textContent = 'No file selected';
+  }
+</script>
+</body>
+</html>
