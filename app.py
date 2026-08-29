@@ -11,7 +11,7 @@ app = Flask(__name__)
 app.secret_key = "chatbot_secret_key_2025"
 
 # Groq config
-client = Groq(api_key=os.environ.get("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"))
+client = Groq(api_key=os.environ.get("GROQ_API_KEY", "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"))
 
 UPLOAD_FOLDER = "uploads"
 HISTORY_FOLDER = "histories"
