@@ -55,7 +55,7 @@ def save_history(session_id, messages):
     path = get_history_path(session_id)
     with open(path, "w") as f:
         json.dump(messages, f)
-        
+
 def query_groq(messages):
     response = client.chat.completions.create(
        model="openai/gpt-oss-20b",
@@ -91,20 +91,29 @@ def upload():
         return jsonify({"error": "No file uploaded"}), 400
 
     file = request.files["file"]
-    if file.filename == "" or not allowed_file(file.filename):
-        return jsonify({"error": "Invalid file type. Please upload a PDF or Word document."}), 400
+    if file.filename == "":
+        return jsonify({"error": "No file selected"}), 400
 
     filename = secure_filename(file.filename)
     
-    # Process file directly from memory without saving to disk
+    # Check extension only (not MIME type — mobile browsers sometimes send wrong MIME)
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if ext not in {"pdf", "docx"}:
+        return jsonify({"error": "Invalid file type. Please upload a PDF or Word document."}), 400
+
+    # Read file into memory first
+    file_bytes = file.read()
+    
     try:
-        if filename.endswith(".pdf"):
-            reader = PyPDF2.PdfReader(file)
+        if ext == "pdf":
+            import io
+            reader = PyPDF2.PdfReader(io.BytesIO(file_bytes))
             text = ""
             for page in reader.pages:
                 text += page.extract_text() or ""
         else:
-            doc = docx.Document(file)
+            import io
+            doc = docx.Document(io.BytesIO(file_bytes))
             text = "\n".join([para.text for para in doc.paragraphs])
     except Exception as e:
         return jsonify({"error": f"Could not process document: {str(e)}"}), 400
