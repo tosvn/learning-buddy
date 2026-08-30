@@ -51,10 +51,11 @@ def load_history(session_id):
     return []
 
 def save_history(session_id, messages):
+    os.makedirs(HISTORY_FOLDER, exist_ok=True)
     path = get_history_path(session_id)
     with open(path, "w") as f:
         json.dump(messages, f)
-
+        
 def query_groq(messages):
     response = client.chat.completions.create(
        model="openai/gpt-oss-20b",
@@ -94,13 +95,19 @@ def upload():
         return jsonify({"error": "Invalid file type. Please upload a PDF or Word document."}), 400
 
     filename = secure_filename(file.filename)
-    filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-    file.save(filepath)
-
-    if filename.endswith(".pdf"):
-        text = extract_text_from_pdf(filepath)
-    else:
-        text = extract_text_from_docx(filepath)
+    
+    # Process file directly from memory without saving to disk
+    try:
+        if filename.endswith(".pdf"):
+            reader = PyPDF2.PdfReader(file)
+            text = ""
+            for page in reader.pages:
+                text += page.extract_text() or ""
+        else:
+            doc = docx.Document(file)
+            text = "\n".join([para.text for para in doc.paragraphs])
+    except Exception as e:
+        return jsonify({"error": f"Could not process document: {str(e)}"}), 400
 
     if not text.strip():
         return jsonify({"error": "Could not extract text from the document."}), 400
