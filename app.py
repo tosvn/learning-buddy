@@ -1,17 +1,22 @@
+print("=== APP.PY IS RUNNING FROM THIS FILE ===")
+with open("debug_marker.txt", "w") as f:
+    f.write("app.py started\n")
 import os
 import json
 import uuid
 import PyPDF2
 import docx
 from flask import Flask, render_template, request, jsonify, session
-from groq import Groq
 from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = "chatbot_secret_key_2025"
 
+from groq import Groq
 # Groq config
-client = Groq(api_key=os.environ.get("GROQ_API_KEY", "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"))
+client = groq_api_key = os.getenv("GROQ_API_KEY")
 
 UPLOAD_FOLDER = "uploads"
 HISTORY_FOLDER = "histories"
