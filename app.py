@@ -8,8 +8,6 @@ import PyPDF2
 import docx
 from flask import Flask, render_template, request, jsonify, session
 from werkzeug.utils import secure_filename
-from dotenv import load_dotenv
-load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = "chatbot_secret_key_2025"
@@ -17,7 +15,7 @@ app.secret_key = "chatbot_secret_key_2025"
 from groq import Groq
 
 # Groq config
-groq_api_key = os.getenv("GROQ_API_KEY")
+groq_api_key = os.environ.get("GROQ_API_KEY")
 client = Groq(api_key=groq_api_key)
 
 UPLOAD_FOLDER = "uploads"
