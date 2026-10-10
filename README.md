@@ -159,23 +159,6 @@ The file must be submitted using the form field named `file`.
 7. Chat messages and AI responses are saved in JSON files.
 8. The backend returns a response to the frontend.
 
-## Security Considerations
-
-- Store API keys and secret keys in environment variables.
-- Validate uploaded files and restrict file sizes.
-- Avoid exposing sensitive error details to users.
-- Use secure session management.
-- Consider a database for reliable, persistent conversation storage in production.
-
-## Future Improvements
-
-- User authentication and personalised student profiles.
-- Support for additional document formats.
-- Improved processing of long documents.
-- Streaming AI responses.
-- Database-backed chat history.
-- Enhanced error handling and automated testing.
-- Improved mobile responsiveness and accessibility.
 
 ## Project Objective
 
